@@ -5,8 +5,8 @@ import json
 
 class Trader:
     POSITION_LIMITS = {
-        "EMERALDS": 20,
-        "TOMATOES": 20,
+        "EMERALDS": 80,
+        "TOMATOES": 80,
     }
 
     def run(self, state: TradingState):
@@ -19,7 +19,7 @@ class Trader:
         else:
             trader_data = {}
 
-        ALPHA = 0.4
+        ALPHA = 0.3
 
         for product in state.order_depths:
             order_depth: OrderDepth = state.order_depths[product]
@@ -44,7 +44,7 @@ class Trader:
 
                 # only place quotes if they do not cross
                 if bid_price < ask_price:
-                    size = 5
+                    size = 10
 
                     if buy_volume > 0:
                         orders.append(Order(product, bid_price, min(size, buy_volume)))
@@ -79,7 +79,7 @@ class Trader:
                 bid_price = int(round(ema - 1))
                 ask_price = int(round(ema + 1))
 
-                size = 5
+                size = 10
 
                 # inventory skew
                 if position > 10:
