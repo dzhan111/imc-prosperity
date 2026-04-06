@@ -64,38 +64,42 @@ class Trader:
                             orders.append(Order(product, best_bid, -take_size))
 
             elif product == "TOMATOES":
-                buy_volume = limit - position
-                sell_volume = limit + position
-
                 prev_ema = trader_data.get("tomatoes_ema")
-
-                if prev_ema is None:
-                    ema = mid
-                else:
-                    ema = ALPHA * mid + (1 - ALPHA) * prev_ema
-
+                ema = mid if prev_ema is None else ALPHA * mid + (1 - ALPHA) * prev_ema
                 trader_data["tomatoes_ema"] = ema
 
-                bid_price = int(round(ema - 1))
-                ask_price = int(round(ema + 1))
+                fair = ema
+                market_spread = best_ask - best_bid
+                edge = max(1, market_spread // 2)
 
-                size = 10
+                inventory_shift = round(position * 0.05)
 
-                # inventory skew
-                if position > 10:
-                    bid_price -= 1
-                    ask_price -= 1
-                elif position < -10:
-                    bid_price += 1
-                    ask_price += 1
+                bid_price = int(round(fair - edge)) - inventory_shift
+                ask_price = int(round(fair + edge)) - inventory_shift
+
+                # take favorable prices first
+                if best_ask < fair and buy_volume > 0:
+                    take_size = min(-order_depth.sell_orders[best_ask], buy_volume)
+                    if take_size > 0:
+                        orders.append(Order(product, best_ask, take_size))
+                        buy_volume -= take_size
+
+                if best_bid > fair and sell_volume > 0:
+                    take_size = min(order_depth.buy_orders[best_bid], sell_volume)
+                    if take_size > 0:
+                        orders.append(Order(product, best_bid, -take_size))
+                        sell_volume -= take_size
+
+                # keep passive quotes passive
+                bid_price = min(bid_price, best_ask - 1)
+                ask_price = max(ask_price, best_bid + 1)
 
                 if bid_price < ask_price:
+                    size = 10
                     if buy_volume > 0:
                         orders.append(Order(product, bid_price, min(size, buy_volume)))
-
                     if sell_volume > 0:
                         orders.append(Order(product, ask_price, -min(size, sell_volume)))
-
             result[product] = orders
 
         traderData = json.dumps(trader_data)
