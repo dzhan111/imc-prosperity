@@ -20,6 +20,9 @@ class Trader:
             trader_data = {}
 
         ALPHA = 0.3
+        #default values to make backtester happt
+        buy_volume = 0
+        sell_volume = 0
 
         for product in state.order_depths:
             order_depth: OrderDepth = state.order_depths[product]
@@ -95,7 +98,7 @@ class Trader:
                 ask_price = max(ask_price, best_bid + 1)
 
                 if bid_price < ask_price:
-                    size = 10
+                    size = 20
                     if buy_volume > 0:
                         orders.append(Order(product, bid_price, min(size, buy_volume)))
                     if sell_volume > 0:
